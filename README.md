@@ -23,9 +23,6 @@ A web-based expense management system built using Google Apps Script and Google 
 - Google Sheets
 - Chart.js
 
-## Screenshots
-
-(Add screenshots)
 
 ## Author
 
