@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ----- Body & Headings ----- */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #e6d0f7, #d0e0ff, #d0f7f2);
+      min-height: 100vh;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 2em;
+      color: #1a237e;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    h3 {
+      margin-bottom: 15px;
+      color: #3949ab;
+    }
+
+    /* ----- Card Layout ----- */
+    .card {
+      background: #fff;
+      margin: 20px auto;
+      padding: 25px;
+      max-width: 900px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    /* ----- Flex Containers ----- */
+    .flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    /* ----- Inputs & Buttons ----- */
+    input, select, button {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      transition: 0.3s;
+    }
+    input:focus, select:focus {
+      border-color: #3f51b5;
+      outline: none;
+      box-shadow: 0 0 5px rgba(63,81,181,0.3);
+    }
+    button {
+      cursor: pointer;
+      background: linear-gradient(135deg,#4caf50,#66bb6a);
+      color: white;
+      border: none;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: linear-gradient(135deg,#388e3c,#43a047);
+      transform: translateY(-2px);
+    }
+
+    /* ----- Charts (Glassmorphism) ----- */
+    #chartContainer, #pieContainer {
+      width: 100%;
+      margin: 20px auto;
+      padding: 25px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    /* ----- Weekly Limit Warning ----- */
+    .warning {
+      color: white;
+      background: #e53935;
+      padding: 14px;
+      border-radius: 12px;
+      margin: 15px auto;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+      animation: flash 0.5s;
+      max-width: 400px;
+    }
+    @keyframes flash { 0%{opacity:0} 50%{opacity:1} 100%{opacity:0} }
+
+    /* ----- Comparison Info ----- */
+    #comparison {
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-top: 12px;
+    }
+    .higher { color: #d32f2f; }
+    .lower { color: #388e3c; }
+
+    /* ----- Table Styling ----- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      transition: background 0.3s;
+    }
+    th {
+      background: #3f51b5;
+      color: white;
+    }
+    tr:hover {
+      background: #e8eaf6;
+    }
+
+    /* ----- Category Totals ----- */
+    #categoryTotals {
+      margin-top: 12px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.05em;
+      color: #3949ab;
+    }
+
+    /* ----- Responsive ----- */
+    @media(max-width:800px){
+      .flex { flex-direction: column; }
+      input, select, button { width: 80%; }
+    }
+  </style>
+</head>
+<body>
+
+<h2>💰 Daily Expenses Tracker</h2>
+
+<!-- ADD EXPENSE -->
+<div class="card">
+  <h3>Add Daily Expense</h3>
+  <div class="flex">
+    <input type="date" id="date" required>
+    <input type="number" id="amount" placeholder="Amount" required>
+    <select id="category">
+      <option value="">Select Category</option>
+      <option value="Food">Food</option>
+      <option value="Transport">Transport</option>
+      <option value="Entertainment">Entertainment</option>
+      <option value="Laundry">Laundry</option>
+      <option value="Shopping">Shopping</option>
+    </select>
+    <input type="text" id="notes" placeholder="Notes">
+    <button onclick="addExpense()">Add</button>
+  </div>
+</div>
+
+<!-- WEEKLY LIMIT -->
+<div class="card">
+  <h3>Weekly Limit</h3>
+  <div class="flex">
+    <input type="number" id="weeklyLimit" placeholder="Set weekly limit" value="100">
+    <button onclick="setLimit()">Set Limit</button>
+  </div>
+</div>
+
+<div id="warning" class="warning">⚠ Weekly limit exceeded!</div>
+
+<!-- CHART -->
+<div class="card">
+  <h3>Expenses Chart</h3>
+  <div class="flex">
+    <label>View:</label>
+    <select id="viewSelect" onchange="renderChart()">
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+    <button onclick="printExpenses()">Print</button>
+  </div>
+  <div id="chartContainer">
+    <canvas id="expenseChart"></canvas>
+    <div id="comparison"></div>
+  </div>
+</div>
+
+<!-- PIE CHART -->
+<div class="card">
+  <h3>Category Distribution</h3>
+  <div id="pieContainer">
+    <canvas id="pieChart"></canvas>
+    <div id="categoryTotals"></div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+  <h3>Expense History</h3>
+  <table id="expenseTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<audio id="alertSound">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
+
+<script>
+let expenses = [];
+let weeklyLimit = Number(document.getElementById('weeklyLimit').value);
+let expenseChart = null;
+let pieChart = null;
+
+function setLimit() {
+  const val = Number(document.getElementById('weeklyLimit').value);
+  if(isNaN(val) || val <= 0){ alert("Enter a valid weekly limit!"); return; }
+  weeklyLimit = val;
+  checkWeeklyLimit();
+}
+
+function addExpense() {
+  const date = document.getElementById('date').value;
+  const amount = Number(document.getElementById('amount').value);
+  const category = document.getElementById('category').value;
+  const notes = document.getElementById('notes').value;
+  if (!date || !amount) { alert('Date & Amount required'); return; }
+  google.script.run.withSuccessHandler(loadExpenses).addExpense(date, amount, category, notes);
+}
+
+function loadExpenses() {
+  google.script.run.withSuccessHandler((data)=>{
+    expenses = data;
+    if(expenses.length===0){
+      resetCharts();
+      document.querySelector("#expenseTable tbody").innerHTML = "<tr><td colspan='4'>No expenses yet</td></tr>";
+      document.getElementById('categoryTotals').innerHTML = "";
+      return;
+    }
+    renderChart();
+    renderPie();
+    populateTable();
+    checkWeeklyLimit();
+    updateWeeklyComparison();
+  }).getExpenses();
+}
+
+function resetCharts(){
+  const ctx = document.getElementById('expenseChart').getContext('2d');
+  if(expenseChart) expenseChart.destroy();
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.font="18px Arial"; ctx.fillText("No expenses yet", 50, 50);
+  const pie = document.getElementById('pieChart').getContext('2d');
+  if(pieChart) pieChart.destroy();
+  pie.clearRect(0,0,pie.canvas.width,pie.canvas.height);
+  pie.fillText("No expenses yet",50,50);
+  document.getElementById('categoryTotals').innerHTML = "";
+}
+
+function checkWeeklyLimit() {
+  const now = new Date();
+  const day = now.getDay();
+  const weekStart = new Date(now); weekStart.setHours(0,0,0,0);
+  weekStart.setDate(now.getDate() - (day===0?6:day-1));
+  let total = 0;
+  expenses.forEach(e=>{ const d = new Date(e.date); d.setHours(0,0,0,0); if(d>=weekStart && d<=now) total += Number(e.amount); });
+  const warningDiv = document.getElementById('warning');
+  const sound = document.getElementById('alertSound');
+  if(total>weeklyLimit){ warningDiv.style.display='block'; if(sound.paused) sound.play(); } 
+  else{ warningDiv.style.display='none'; }
+}
+
+function updateWeeklyComparison(){
+  const now = new Date();
+  const day = now.getDay();
+  const thisWeekStart = new Date(now); thisWeekStart.setHours(0,0,0,0);
+  thisWeekStart.setDate(now.getDate()-(day===0?6:day-1));
+  const lastWeekStart = new Date(thisWeekStart); lastWeekStart.setDate(thisWeekStart.getDate()-7);
+  let thisWeekTotal=0, lastWeekTotal=0;
+  expenses.forEach(e=>{
+    const d=new Date(e.date); d.setHours(0,0,0,0);
+    if(d>=thisWeekStart && d<=now) thisWeekTotal+=Number(e.amount);
+    if(d>=lastWeekStart && d<thisWeekStart) lastWeekTotal+=Number(e.amount);
+  });
+  const div = document.getElementById("comparison");
+  if(thisWeekTotal>lastWeekTotal){ div.innerHTML=`📈 This week: RM${thisWeekTotal} vs Last week: RM${lastWeekTotal}`; div.className="higher"; }
+  else if(thisWeekTotal<lastWeekTotal){ div.innerHTML=`📉 This week: RM${thisWeekTotal} vs Last week: RM${lastWeekTotal}`; div.className="lower"; }
+  else{ div.innerHTML=`⚖ Same: RM${thisWeekTotal}`; div.className=""; }
+}
+
+function renderChart(){
+  const ctx = document.getElementById('expenseChart').getContext('2d');
+  const view = document.getElementById('viewSelect').value;
+  let labels=[], dataPoints=[], backgroundColors=[];
+  if(view==='daily'){
+    const map={}; expenses.forEach(e=>{ map[e.date]=(map[e.date]||0)+Number(e.amount); });
+    labels=Object.keys(map); dataPoints=Object.values(map);
+    backgroundColors = dataPoints.map(v=>v>weeklyLimit?'rgba(255,99,71,0.8)':'rgba(76,175,80,0.7)');
+  }
+  else if(view==='weekly'){
+    const map={}; expenses.forEach(e=>{
+      const d=new Date(e.date); const day=d.getDay(); const monday=new Date(d); monday.setDate(d.getDate()-(day===0?6:day-1));
+      const wk = monday.toISOString().slice(0,10); map[wk]=(map[wk]||0)+Number(e.amount);
+    });
+    labels=Object.keys(map); dataPoints=Object.values(map);
+    backgroundColors = dataPoints.map(v=>v>weeklyLimit?'rgba(255,99,71,0.8)':'rgba(76,175,80,0.7)');
+  }
+  else if(view==='monthly'){
+    const map={}; expenses.forEach(e=>{
+      const d=new Date(e.date); const mon=`${d.getFullYear()}-${("0"+(d.getMonth()+1)).slice(-2)}`;
+      map[mon]=(map[mon]||0)+Number(e.amount);
+    });
+    labels=Object.keys(map); dataPoints=Object.values(map);
+    backgroundColors = dataPoints.map(v=>v>weeklyLimit?'rgba(255,99,71,0.8)':'rgba(76,175,80,0.7)');
+  }
+  if(expenseChart) expenseChart.destroy();
+  expenseChart=new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label:"Expenses", data:dataPoints, backgroundColor:backgroundColors, borderColor:backgroundColors.map(c=>c.replace('0.7','1').replace('0.8','1')), borderWidth:1 }] }, options:{ responsive:true, plugins:{ legend:{ display:false } } } });
+}
+
+function renderPie(){
+  const ctx=document.getElementById('pieChart').getContext('2d');
+  const map={}; expenses.forEach(e=>{ map[e.category]=(map[e.category]||0)+Number(e.amount); });
+  const labels=Object.keys(map); const values=Object.values(map);
+  const colors=labels.map((_,i)=>`hsl(${i*50},70%,60%)`);
+  if(pieChart) pieChart.destroy();
+  pieChart=new Chart(ctx,{ type:'pie', data:{ labels, datasets:[{ data:values, backgroundColor:colors }] }, options:{ plugins:{ legend:{ position:'bottom' } } } });
+  let totalsHTML="📊 Category Totals: "; labels.forEach((cat,i)=>{ totalsHTML+=`${cat}: ${values[i]} | `; });
+  document.getElementById('categoryTotals').innerHTML=totalsHTML.slice(0,-3);
+}
+
+function populateTable(){
+  const tbody=document.querySelector("#expenseTable tbody"); tbody.innerHTML="";
+  expenses.forEach(e=>{ tbody.innerHTML+=`<tr><td>${e.date}</td><td>${e.category}</td><td>RM${e.amount}</td><td>${e.notes}</td></tr>`; });
+}
+
+function printExpenses(){
+  let printData=''; expenses.forEach(e=>{ printData+=`${e.date} | ${e.category} | RM${e.amount} | ${e.notes}\n`; });
+  const w=window.open("","", "height=500,width=800"); w.document.write("<pre>"+printData+"</pre>"); w.print();
+}
+
+loadExpenses();
+</script>
+</body>
+</html>
